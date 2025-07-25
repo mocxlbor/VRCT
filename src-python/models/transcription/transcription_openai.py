@@ -1,5 +1,4 @@
 import json
-import base64
 import time
 from typing import Optional, Dict, Any
 import requests
@@ -30,8 +29,7 @@ class OpenAITranscriber:
         self.model = "gpt-4o-mini-transcribe"
         self.session = requests.Session()
         self.session.headers.update({
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {api_key}"
         })
         
     def validate_api_key(self) -> bool:
@@ -49,9 +47,9 @@ class OpenAITranscriber:
             errorLogging()
             return False
     
-    def _prepare_audio_data(self, audio_data: bytes, sample_rate: int, sample_width: int, channels: int) -> str:
+    def _prepare_audio_file(self, audio_data: bytes, sample_rate: int, sample_width: int, channels: int) -> BytesIO:
         """
-        Prepare audio data for OpenAI API
+        Prepare audio data as WAV file for OpenAI API
         
         Args:
             audio_data: Raw audio bytes
@@ -60,7 +58,7 @@ class OpenAITranscriber:
             channels: Number of audio channels
             
         Returns:
-            str: Base64 encoded audio data
+            BytesIO: WAV file buffer
         """
         try:
             # Create WAV format audio data
@@ -72,16 +70,13 @@ class OpenAITranscriber:
                 wf.writeframes(audio_data)
             
             temp_file.seek(0)
-            audio_bytes = temp_file.read()
-            
-            # Encode to base64
-            return base64.b64encode(audio_bytes).decode('utf-8')
+            return temp_file
         except Exception as e:
             errorLogging()
             raise OpenAITranscriptionError("audio_processing", f"Failed to prepare audio data: {str(e)}")
     
     def transcribe_audio(self, audio_data: bytes, sample_rate: int, sample_width: int, 
-                        channels: int, language: Optional[str] = None) -> Dict[str, Any]:
+                        channels: int, language: Optional[str] = None, prompt: Optional[str] = None) -> Dict[str, Any]:
         """
         Transcribe audio using OpenAI API
         
@@ -91,29 +86,40 @@ class OpenAITranscriber:
             sample_width: Audio sample width
             channels: Number of audio channels
             language: Optional language code for transcription
+            prompt: Optional prompt to improve transcription quality
             
         Returns:
             Dict containing transcription result with keys: text, language, confidence
         """
         try:
-            # Prepare audio data
-            encoded_audio = self._prepare_audio_data(audio_data, sample_rate, sample_width, channels)
+            # Prepare audio file
+            audio_file = self._prepare_audio_file(audio_data, sample_rate, sample_width, channels)
             
-            # Prepare request payload
-            payload = {
-                "model": self.model,
-                "audio": encoded_audio,
-                "response_format": "json"
+            # Prepare multipart form data
+            files = {
+                'file': ('audio.wav', audio_file, 'audio/wav')
             }
             
-            # Add language if specified
+            data = {
+                'model': self.model,
+                'response_format': 'json'
+            }
+            
+            # Add optional parameters
             if language:
-                payload["language"] = language
+                data['language'] = language
+            if prompt:
+                data['prompt'] = prompt
+            
+            # Remove Content-Type header to let requests set it for multipart
+            headers = {"Authorization": f"Bearer {self.api_key}"}
             
             # Make API request
             response = self.session.post(
                 f"{self.base_url}/audio/transcriptions",
-                json=payload,
+                files=files,
+                data=data,
+                headers=headers,
                 timeout=30
             )
             

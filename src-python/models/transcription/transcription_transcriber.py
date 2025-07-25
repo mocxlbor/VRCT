@@ -115,7 +115,8 @@ class AudioTranscriber:
                                     self.audio_sources["sample_rate"],
                                     self.audio_sources["sample_width"],
                                     self.audio_sources["channels"],
-                                    language=openai_lang if len(languages) == 1 else None
+                                    language=openai_lang if len(languages) == 1 else None,
+                                    prompt=None  # Can be extended to support custom prompts
                                 )
                                 confidences.append({
                                     "confidence": result.get("confidence", 0.9),
