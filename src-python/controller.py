@@ -1435,7 +1435,7 @@ class Controller:
         try:
             data = str(data)
             if len(data) > 20:  # OpenAI API keys are typically longer than 20 characters
-                result = model.authenticationOpenAIApiKey(auth_key=data)
+                result = model.authenticationOpenAIApiKey(api_key=data)
                 if result is True:
                     key = data
                     auth_keys = config.AUTH_KEYS
