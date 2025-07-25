@@ -188,7 +188,7 @@ class OpenAITranscriber:
             response.encoding = 'utf-8'
             error_data = response.json()
             error_message = error_data.get("error", {}).get("message", "Unknown API error")
-        except:
+        except (json.JSONDecodeError, AttributeError):
             try:
                 error_text = safe_encode_text(response.text)
                 error_message = f"HTTP {response.status_code}: {error_text}"

@@ -129,9 +129,9 @@ class TestOpenAITranscriber(unittest.TestCase):
         
         # Verify language was passed in request
         call_args = mock_post.call_args
-        payload = call_args[1]["json"]
-        self.assertEqual(payload["language"], "es")
-        
+        self.assertIn('data', call_args.kwargs)
+        payload = call_args.kwargs['data']
+        self.assertEqual(payload['language'], 'es')
     @patch('requests.Session.post')
     def test_transcribe_audio_auth_error(self, mock_post):
         """Test transcription with authentication error"""

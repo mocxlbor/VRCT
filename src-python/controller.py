@@ -1435,7 +1435,7 @@ class Controller:
         try:
             data = str(data)
             if len(data) > 20:  # OpenAI API keys are typically longer than 20 characters
-                result = model.authenticationOpenAIApiKey(auth_key=data)
+                result = model.authenticationOpenAIApiKey(api_key=data)
                 if result is True:
                     key = data
                     auth_keys = config.AUTH_KEYS
@@ -1463,9 +1463,9 @@ class Controller:
         except Exception as e:
             errorLogging()
             response = {
-                "status":400,
-                "result":{
-                    "message":f"Error {e}",
+                "status": 400,
+                "result": {
+                    "message": "An error occurred while setting the OpenAI API key.",
                     "data": None
                 }
             }
@@ -2297,7 +2297,7 @@ class Controller:
                         config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
                 case "OpenAI":
                     if connected_network is True and config.AUTH_KEYS.get("OpenAI_API"):
-                        if model.authenticationOpenAIApiKey(auth_key=config.AUTH_KEYS["OpenAI_API"]) is True:
+                        if model.authenticationOpenAIApiKey(api_key=config.AUTH_KEYS["OpenAI_API"]) is True:
                             config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = True
                         else:
                             config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
