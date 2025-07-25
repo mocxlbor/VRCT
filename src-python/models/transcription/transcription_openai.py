@@ -1,10 +1,39 @@
 import json
 import time
+import sys
+import os
 from typing import Optional, Dict, Any
 import requests
 from io import BytesIO
 import wave
 from utils import errorLogging
+
+# Set UTF-8 encoding for Windows compatibility
+if sys.platform.startswith('win'):
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+def safe_encode_text(text: str) -> str:
+    """
+    Safely encode text to handle Windows encoding issues
+    
+    Args:
+        text: Input text string
+        
+    Returns:
+        str: Safely encoded text
+    """
+    if not isinstance(text, str):
+        return str(text)
+    
+    try:
+        if sys.platform.startswith('win'):
+            # For Windows, use replace errors to handle problematic characters
+            return text.encode('utf-8', errors='replace').decode('utf-8')
+        else:
+            return text
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        # Ultimate fallback - remove problematic characters
+        return text.encode('ascii', errors='ignore').decode('ascii')
 
 class OpenAITranscriptionError(Exception):
     """Custom exception for OpenAI transcription errors"""
@@ -125,9 +154,16 @@ class OpenAITranscriber:
             
             # Handle response
             if response.status_code == 200:
+                # Ensure proper encoding handling
+                response.encoding = 'utf-8'
                 result = response.json()
+                text = result.get("text", "")
+                
+                # Handle potential encoding issues
+                text = safe_encode_text(text)
+                
                 return {
-                    "text": result.get("text", ""),
+                    "text": text,
                     "language": result.get("language", language or "auto"),
                     "confidence": 0.9  # OpenAI doesn't provide confidence scores, use default
                 }
@@ -149,10 +185,15 @@ class OpenAITranscriber:
             response: HTTP response object
         """
         try:
+            response.encoding = 'utf-8'
             error_data = response.json()
             error_message = error_data.get("error", {}).get("message", "Unknown API error")
         except:
-            error_message = f"HTTP {response.status_code}: {response.text}"
+            try:
+                error_text = safe_encode_text(response.text)
+                error_message = f"HTTP {response.status_code}: {error_text}"
+            except (AttributeError, Exception):
+                error_message = f"HTTP {response.status_code}: [Error message encoding issue]"
         
         if response.status_code == 401:
             raise OpenAITranscriptionError("auth", f"Authentication failed: {error_message}")
