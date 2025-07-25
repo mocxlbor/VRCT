@@ -2297,7 +2297,7 @@ class Controller:
                         config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
                 case "OpenAI":
                     if connected_network is True and config.AUTH_KEYS.get("OpenAI_API"):
-                        if model.authenticationOpenAIApiKey(auth_key=config.AUTH_KEYS["OpenAI_API"]) is True:
+                        if model.authenticationOpenAIApiKey(api_key=config.AUTH_KEYS["OpenAI_API"]) is True:
                             config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = True
                         else:
                             config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
