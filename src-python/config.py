@@ -1055,7 +1055,8 @@ class Config:
             self._SELECTABLE_TRANSLATION_ENGINE_STATUS[engine] = False
         self._SELECTABLE_TRANSCRIPTION_ENGINE_STATUS = {}
         for engine in self.SELECTABLE_TRANSCRIPTION_ENGINE_LIST:
-            self._SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
+            # Enable Google and Whisper by default, OpenAI requires API key
+            self._SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = engine in ["Google", "Whisper"]
 
         # Save Json Data
         ## Main Window
@@ -1142,6 +1143,7 @@ class Config:
         self._OSC_PORT = 9000
         self._AUTH_KEYS = {
             "DeepL_API": None,
+            "OpenAI_API": None,
         }
         self._USE_EXCLUDE_WORDS = True
         self._SELECTED_TRANSLATION_COMPUTE_DEVICE = copy.deepcopy(self.SELECTABLE_COMPUTE_DEVICE_LIST[0])

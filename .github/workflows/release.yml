@@ -55,6 +55,8 @@ jobs:
       - name: Upload to Hugging Face Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: 1
         shell: pwsh # Explicitly use PowerShell for file operations
         run: |
           pip install huggingface_hub
@@ -64,7 +66,7 @@ jobs:
           Copy-Item -Path ./VRCT.zip -Destination "$UPLOAD_DIR/VRCT.zip"
           Copy-Item -Path ./VRCT_cuda.zip -Destination "$UPLOAD_DIR/VRCT_cuda.zip"
 
-          huggingface-cli upload ms-software/VRCT $UPLOAD_DIR . --repo-type model --commit-message "👍️[Update] ${{ env.VERSION }} Release"
+          huggingface-cli upload ms-software/VRCT $UPLOAD_DIR . --repo-type model --commit-message "[Update] ${{ env.VERSION }} Release"
 
           huggingface-cli tag ms-software/VRCT ${{ github.ref_name }} --repo-type model --message "Release ${{ github.ref_name }}"
 

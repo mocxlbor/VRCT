@@ -1,10 +1,16 @@
 import sys
+import os
 import json
 import time
 from typing import Any
 from threading import Thread
 from queue import Queue
 import logging
+
+# Set UTF-8 encoding for Windows
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ['PYTHONUTF8'] = '1'
+
 from controller import Controller  # noqa: E402
 from utils import printLog, printResponse, errorLogging, encodeBase64 # noqa: E402
 
