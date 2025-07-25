@@ -1463,9 +1463,9 @@ class Controller:
         except Exception as e:
             errorLogging()
             response = {
-                "status":400,
-                "result":{
-                    "message":f"Error {e}",
+                "status": 400,
+                "result": {
+                    "message": "An error occurred while setting the OpenAI API key.",
                     "data": None
                 }
             }
