@@ -1055,7 +1055,8 @@ class Config:
             self._SELECTABLE_TRANSLATION_ENGINE_STATUS[engine] = False
         self._SELECTABLE_TRANSCRIPTION_ENGINE_STATUS = {}
         for engine in self.SELECTABLE_TRANSCRIPTION_ENGINE_LIST:
-            self._SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
+            # Enable Google and Whisper by default, OpenAI requires API key
+            self._SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = engine in ["Google", "Whisper"]
 
         # Save Json Data
         ## Main Window

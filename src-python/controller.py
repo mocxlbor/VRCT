@@ -2025,16 +2025,18 @@ class Controller:
         current_engine = config.SELECTED_TRANSCRIPTION_ENGINE
         selected_engines = [key for key, value in config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS.items() if value is True]
 
-        # 選択可能なエンジンがなければ、Whisper に変更
-        if current_engine in {"Whisper", "Google"}:
-            if current_engine not in selected_engines:
-                if weight_available:
-                    alternate = "Google" if current_engine == "Whisper" else "Whisper"
-                    config.SELECTED_TRANSCRIPTION_ENGINE = alternate if alternate in selected_engines else None
-                else:
-                    config.SELECTED_TRANSCRIPTION_ENGINE = "Whisper"
-        else:
-            config.SELECTED_TRANSCRIPTION_ENGINE = "Whisper"
+        # If current engine is not available, switch to an available one
+        if current_engine not in selected_engines:
+            # Priority order: Google -> OpenAI -> Whisper
+            if "Google" in selected_engines:
+                config.SELECTED_TRANSCRIPTION_ENGINE = "Google"
+            elif "OpenAI" in selected_engines:
+                config.SELECTED_TRANSCRIPTION_ENGINE = "OpenAI"
+            elif "Whisper" in selected_engines and weight_available:
+                config.SELECTED_TRANSCRIPTION_ENGINE = "Whisper"
+            else:
+                # Default to Google if nothing else is available
+                config.SELECTED_TRANSCRIPTION_ENGINE = "Google"
 
     def startCheckMicEnergy(self) -> None:
         while self.device_access_status is False:
