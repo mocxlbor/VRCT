@@ -151,7 +151,7 @@ class OpenAITranscriber:
         try:
             error_data = response.json()
             error_message = error_data.get("error", {}).get("message", "Unknown API error")
-        except:
+        except (json.JSONDecodeError, AttributeError):
             error_message = f"HTTP {response.status_code}: {response.text}"
         
         if response.status_code == 401:
