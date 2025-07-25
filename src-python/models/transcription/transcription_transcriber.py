@@ -8,6 +8,7 @@ from datetime import timedelta
 from pyaudiowpatch import get_sample_size, paInt16
 from .transcription_languages import transcription_lang
 from .transcription_whisper import getWhisperModel, checkWhisperWeight
+from .transcription_openai import OpenAITranscriber, OpenAITranscriptionError
 
 import torch
 import numpy as np
@@ -30,6 +31,7 @@ class AudioTranscriber:
         self.audio_recognizer = Recognizer()
         self.transcription_engine = "Google"
         self.whisper_model = None
+        self.openai_transcriber = None
         self.audio_sources = {
                 "sample_rate": source.SAMPLE_RATE,
                 "sample_width": source.SAMPLE_WIDTH,
@@ -43,6 +45,16 @@ class AudioTranscriber:
         if transcription_engine == "Whisper" and checkWhisperWeight(root, whisper_weight_type) is True:
             self.whisper_model = getWhisperModel(root, whisper_weight_type, device=device, device_index=device_index)
             self.transcription_engine = "Whisper"
+        elif transcription_engine == "OpenAI":
+            from config import config
+            api_key = config.AUTH_KEYS.get("OpenAI_API")
+            if api_key:
+                try:
+                    self.openai_transcriber = OpenAITranscriber(api_key)
+                    self.transcription_engine = "OpenAI"
+                except Exception:
+                    errorLogging()
+                    self.transcription_engine = "Google"
 
     def transcribeAudioQueue(self, audio_queue, languages, countries, avg_logprob=-0.8, no_speech_prob=0.6):
         if audio_queue.empty():
@@ -93,6 +105,36 @@ class AudioTranscriber:
                         confidences.append({"confidence": info.language_probability, "text": text, "language": language})
                         if (len(languages) == 1) or (transcription_lang[language][country][self.transcription_engine] == info.language):
                             break
+                case "OpenAI":
+                    if self.openai_transcriber:
+                        for language, country in zip(languages, countries):
+                            try:
+                                openai_lang = transcription_lang[language][country]["OpenAI"]
+                                result = self.openai_transcriber.transcribe_audio(
+                                    self.audio_sources["last_sample"],
+                                    self.audio_sources["sample_rate"],
+                                    self.audio_sources["sample_width"],
+                                    self.audio_sources["channels"],
+                                    language=openai_lang if len(languages) == 1 else None
+                                )
+                                confidences.append({
+                                    "confidence": result.get("confidence", 0.9),
+                                    "text": result.get("text", ""),
+                                    "language": language
+                                })
+                                if len(languages) == 1:
+                                    break
+                            except OpenAITranscriptionError as e:
+                                errorLogging()
+                                # Handle specific OpenAI errors
+                                if e.error_type == "auth":
+                                    # Disable OpenAI engine if authentication fails
+                                    from config import config
+                                    config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS["OpenAI"] = False
+                                break
+                            except Exception:
+                                errorLogging()
+                                pass
 
         except UnknownValueError:
             pass

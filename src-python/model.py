@@ -140,6 +140,11 @@ class Model:
         result = self.translator.authenticationDeepLAuthKey(auth_key)
         return result
 
+    def authenticationOpenAIApiKey(self, api_key):
+        from models.transcription.transcription_openai import check_openai_api_key
+        result = check_openai_api_key(api_key)
+        return result
+
     def startLogger(self):
         os_makedirs(config.PATH_LOGS, exist_ok=True)
         file_name = os_path.join(config.PATH_LOGS, f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log")

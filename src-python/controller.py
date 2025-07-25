@@ -1374,6 +1374,10 @@ class Controller:
     def getDeepLAuthKey(*args, **kwargs) -> dict:
         return {"status":200, "result":config.AUTH_KEYS["DeepL_API"]}
 
+    @staticmethod
+    def getOpenAIAuthKey(*args, **kwargs) -> dict:
+        return {"status":200, "result":config.AUTH_KEYS["OpenAI_API"]}
+
     def setDeeplAuthKey(self, data, *args, **kwargs) -> dict:
         printLog("Set DeepL Auth Key", data)
         translator_name = "DeepL_API"
@@ -1424,6 +1428,57 @@ class Controller:
         config.SELECTABLE_TRANSLATION_ENGINE_STATUS[translator_name] = False
         self.updateTranslationEngineAndEngineList()
         return {"status":200, "result":config.AUTH_KEYS[translator_name]}
+
+    def setOpenAIAuthKey(self, data, *args, **kwargs) -> dict:
+        printLog("Set OpenAI Auth Key", data)
+        auth_key_name = "OpenAI_API"
+        try:
+            data = str(data)
+            if len(data) > 20:  # OpenAI API keys are typically longer than 20 characters
+                result = model.authenticationOpenAIApiKey(auth_key=data)
+                if result is True:
+                    key = data
+                    auth_keys = config.AUTH_KEYS
+                    auth_keys[auth_key_name] = key
+                    config.AUTH_KEYS = auth_keys
+                    config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS["OpenAI"] = True
+                    self.updateTranscriptionEngine()
+                    response = {"status":200, "result":"API key validated successfully"}
+                else:
+                    response = {
+                        "status":400,
+                        "result":{
+                            "message":"Authentication failure of OpenAI API key",
+                            "data": None
+                        }
+                    }
+            else:
+                response = {
+                    "status":400,
+                    "result":{
+                        "message":"OpenAI API key format is not correct",
+                        "data": None
+                    }
+                }
+        except Exception as e:
+            errorLogging()
+            response = {
+                "status":400,
+                "result":{
+                    "message":f"Error {e}",
+                    "data": None
+                }
+            }
+        return response
+
+    def delOpenAIAuthKey(self, *args, **kwargs) -> dict:
+        auth_key_name = "OpenAI_API"
+        auth_keys = config.AUTH_KEYS
+        auth_keys[auth_key_name] = None
+        config.AUTH_KEYS = auth_keys
+        config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS["OpenAI"] = False
+        self.updateTranscriptionEngine()
+        return {"status":200, "result":config.AUTH_KEYS[auth_key_name]}
 
     @staticmethod
     def getCtranslate2WeightType(*args, **kwargs) -> dict:
@@ -2238,6 +2293,14 @@ class Controller:
                 case "Whisper":
                     if model.checkTranscriptionWhisperModelWeight(config.WHISPER_WEIGHT_TYPE) is True:
                         config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = True
+                    else:
+                        config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
+                case "OpenAI":
+                    if connected_network is True and config.AUTH_KEYS.get("OpenAI_API"):
+                        if model.authenticationOpenAIApiKey(auth_key=config.AUTH_KEYS["OpenAI_API"]) is True:
+                            config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = True
+                        else:
+                            config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
                     else:
                         config.SELECTABLE_TRANSCRIPTION_ENGINE_STATUS[engine] = False
                 case _:
